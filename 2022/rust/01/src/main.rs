@@ -1,28 +1,19 @@
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::fs;
 
-fn main() -> io::Result<()> {
-    let file = File::open("input.txt")?;
-    let reader = BufReader::new(file);
-    let mut counter = 0;
-    let mut top_three: Vec<u32> = vec![0; 3];
+fn main() {
+    let file = fs::read_to_string("input.txt").unwrap();
 
-    for line in reader.lines() {
-        let line = line.unwrap();
+    let mut result = file
+        .split("\n\n")
+        .map(|elf| {
+            elf.lines()
+                .map(|item| item.parse::<u32>().unwrap())
+                .sum::<u32>()
+        })
+        .collect::<Vec<_>>();
 
-        if line.is_empty() {
-            if counter > top_three.last().copied().unwrap() {
-                top_three.pop();
-                top_three.push(counter);
-                top_three.sort_by(|a, b| b.cmp(a));
-            }
-            counter = 0;
-        } else {
-            counter += line.parse::<u32>().unwrap();
-        }
-    }
+    result.sort_by(|a, b| b.cmp(a));
+    let sum: u32 = result.iter().take(3).sum();
 
-    println!("Top 3 elves: {:?}", top_three);
-    println!("Sum of: {}", top_three.iter().sum::<u32>());
-    Ok(())
+    print!("{}", sum.to_string())
 }
