@@ -34,13 +34,13 @@ fn get_common_char_value(first: &str, second: &str, third: &str) -> u32 {
     value
 }
 
-struct Group {
-    bags: Vec<String>,
+struct Group<'a> {
+    bags: Vec<&'a str>,
 }
 
-impl Group {
-    fn add_bag(&mut self, bag: &str) {
-        self.bags.push(bag.to_string());
+impl<'a> Group<'a> {
+    fn add_bag(&mut self, bag: &'a str) {
+        self.bags.push(bag);
     }
 }
 
@@ -55,14 +55,12 @@ fn main() {
             continue;
         }
 
-        elf_groups.push(Group {
-            bags: vec![bag.to_string()],
-        });
+        elf_groups.push(Group { bags: vec![bag] });
     }
 
     let result = elf_groups
         .into_iter()
-        .map(|group| get_common_char_value(&*group.bags[0], &*group.bags[1], &*group.bags[2]))
+        .map(|group| get_common_char_value(group.bags[0], group.bags[1], group.bags[2]))
         .sum::<u32>();
 
     println!("{}", result);
