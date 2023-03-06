@@ -34,18 +34,31 @@ fn get_common_char_value(first: &str, second: &str) -> u32 {
     value
 }
 
+struct Group {
+    bags: Vec<String>,
+}
+
+impl Group {
+    fn add_bag(&mut self, bag: &str) {
+        self.bags.push(bag.to_string());
+    }
+}
+
 fn main() {
     let file = fs::read_to_string("input.txt").unwrap();
+    let mut elf_groups: Vec<Group> = vec![];
 
-    let result = file
-        .lines()
-        .map(|bag| {
-            let itemslen = bag.len() / 2;
-            let first = &bag[..itemslen];
-            let second = &bag[itemslen..];
-            get_common_char_value(first, second)
-        })
-        .sum::<u32>();
+    for (i, bag) in file.lines().enumerate() {
+        if i % 3 != 0 {
+            let len = elf_groups.len();
+            elf_groups[len - 1].add_bag(bag);
+            continue;
+        }
 
-    println!("{}", result);
+        elf_groups.push(Group {
+            bags: vec![bag.to_string()],
+        });
+    }
+
+    println!("{:?}", elf_groups.pop().unwrap().bags);
 }
