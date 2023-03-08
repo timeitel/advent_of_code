@@ -1,12 +1,35 @@
 use std::fs;
 
-fn process(file: &str) -> &str {
+use nom::bytes::complete::tag;
+use nom::character::complete;
+use nom::IResult;
+
+fn parse_move_line(input: &str) -> IResult<&str, (u32, usize, usize)> {
+    let (input, _) = tag("move ")(input)?;
+    let (input, move_count) = complete::u32(input)?;
+    let (input, _) = tag(" from ")(input)?;
+    let (input, from_idx) = complete::u32(input)?;
+    let (input, _) = tag(" to ")(input)?;
+    let (input, to_idx) = complete::u32(input)?;
+
+    Ok((
+        input,
+        (
+            move_count,
+            usize::try_from(from_idx - 1).unwrap(),
+            usize::try_from(to_idx - 1).unwrap(),
+        ),
+    ))
+}
+
+fn process(file: &str) -> String {
     let mut iter = file.split("\n\n");
     let raw_stacks = iter.next().unwrap();
-    // let moves = iter.next().unwrap();
+    let moves = iter.next().unwrap();
 
     let mut stacks: Vec<Vec<char>> = vec![vec![]];
 
+    // build stacks from input
     raw_stacks.lines().rev().for_each(|line| {
         let mut index = 0;
 
@@ -22,22 +45,26 @@ fn process(file: &str) -> &str {
         }
     });
 
-    // let result = file
-    //     .lines()
-    //     .map(|l| {
-    //         for (i, c) in l.chars().enumerate() {
-    //             if i % 2 == 0 {
-    //                 continue;
-    //             }
+    // apply moves to stacks
+    moves.lines().for_each(|l| {
+        let (_, (move_count, from_idx, to_idx)) = parse_move_line(l).unwrap();
 
-    //             if c.is_alphabetic() {
-    //                 println!("{c}")
-    //             }
-    //         }
-    //     })
-    //     .collect::<Vec<_>>();
+        (0..move_count - 1).for_each(|_| {
+            let item = &mut stacks[from_idx].pop().unwrap();
+            (&mut stacks[to_idx]).push(*item);
+        });
+    });
 
-    "test"
+    let result: String = stacks
+        .into_iter()
+        .map(|mut x| {
+            print!("{:?}", x);
+            let item = x.pop().unwrap();
+            item
+        })
+        .collect();
+
+    result
 }
 
 fn main() {
