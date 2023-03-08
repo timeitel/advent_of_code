@@ -27,20 +27,19 @@ fn process(file: &str) -> String {
     let raw_stacks = iter.next().unwrap();
     let moves = iter.next().unwrap();
 
-    let mut stacks: Vec<Vec<char>> = vec![vec![]];
+    let mut stacks: Vec<Vec<char>> = vec![vec![]; 30];
 
     // build stacks from input
     raw_stacks.lines().rev().for_each(|line| {
         let mut index = 0;
 
-        for ch in line.chars() {
-            if ch.is_alphabetic() {
-                if index > stacks.len() - 1 {
-                    stacks.push(vec![]);
-                }
-
-                (&mut stacks[index]).push(ch);
+        for (i, ch) in line.chars().enumerate() {
+            if i % 4 == 0 && i != 0 {
                 index += 1;
+            }
+
+            if ch.is_alphabetic() {
+                (&mut stacks[index]).push(ch);
             }
         }
     });
@@ -49,7 +48,7 @@ fn process(file: &str) -> String {
     moves.lines().for_each(|l| {
         let (_, (move_count, from_idx, to_idx)) = parse_move_line(l).unwrap();
 
-        (0..move_count - 1).for_each(|_| {
+        (0..move_count).for_each(|_| {
             let item = &mut stacks[from_idx].pop().unwrap();
             (&mut stacks[to_idx]).push(*item);
         });
@@ -57,11 +56,8 @@ fn process(file: &str) -> String {
 
     let result: String = stacks
         .into_iter()
-        .map(|mut x| {
-            print!("{:?}", x);
-            let item = x.pop().unwrap();
-            item
-        })
+        .filter(|x| x.len() > 0)
+        .map(|mut x| x.pop().unwrap())
         .collect();
 
     result
