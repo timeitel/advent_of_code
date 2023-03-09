@@ -4,7 +4,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete;
 use nom::IResult;
 
-fn parse_move_line(input: &str) -> IResult<&str, (u32, usize, usize)> {
+fn parse_move_line(input: &str) -> IResult<&str, (usize, usize, usize)> {
     let (input, _) = tag("move ")(input)?;
     let (input, move_count) = complete::u32(input)?;
     let (input, _) = tag(" from ")(input)?;
@@ -15,7 +15,7 @@ fn parse_move_line(input: &str) -> IResult<&str, (u32, usize, usize)> {
     Ok((
         input,
         (
-            move_count,
+            usize::try_from(move_count).unwrap(),
             usize::try_from(from_idx - 1).unwrap(),
             usize::try_from(to_idx - 1).unwrap(),
         ),
@@ -48,10 +48,16 @@ fn process(file: &str) -> String {
     moves.lines().for_each(|l| {
         let (_, (move_count, from_idx, to_idx)) = parse_move_line(l).unwrap();
 
-        (0..move_count).for_each(|_| {
-            let item = &mut stacks[from_idx].pop().unwrap();
-            (&mut stacks[to_idx]).push(*item);
-        });
+        let from_stack = &mut stacks[from_idx];
+        let mut items: Vec<_> = from_stack
+            .drain((from_stack.len() - move_count)..)
+            .collect();
+        (&mut stacks[to_idx]).append(&mut items);
+
+        // (0..move_count).for_each(|_| {
+        //     let item = &mut stacks[from_idx].pop().unwrap();
+        //     (&mut stacks[to_idx]).push(*item);
+        // });
     });
 
     let result: String = stacks
@@ -82,5 +88,5 @@ move 2 from 2 to 1
 move 1 from 1 to 2
 ";
 
-    assert_eq!(process(INPUT), "CMZ");
+    assert_eq!(process(INPUT), "MCD");
 }
