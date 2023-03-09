@@ -4,7 +4,13 @@ use nom::bytes::complete::tag;
 use nom::character::complete;
 use nom::IResult;
 
-fn parse_move_line(input: &str) -> IResult<&str, (usize, usize, usize)> {
+struct CrateMove {
+    count: usize,
+    from: usize,
+    to: usize,
+}
+
+fn parse_move_line(input: &str) -> IResult<&str, CrateMove> {
     let (input, _) = tag("move ")(input)?;
     let (input, move_count) = complete::u32(input)?;
     let (input, _) = tag(" from ")(input)?;
@@ -14,11 +20,11 @@ fn parse_move_line(input: &str) -> IResult<&str, (usize, usize, usize)> {
 
     Ok((
         input,
-        (
-            usize::try_from(move_count).unwrap(),
-            usize::try_from(from_idx - 1).unwrap(),
-            usize::try_from(to_idx - 1).unwrap(),
-        ),
+        CrateMove {
+            count: usize::try_from(move_count).unwrap(),
+            from: usize::try_from(from_idx - 1).unwrap(),
+            to: usize::try_from(to_idx - 1).unwrap(),
+        },
     ))
 }
 
@@ -46,18 +52,13 @@ fn process(file: &str) -> String {
 
     // apply moves to stacks
     moves.lines().for_each(|l| {
-        let (_, (move_count, from_idx, to_idx)) = parse_move_line(l).unwrap();
+        let (_, crate_move) = parse_move_line(l).unwrap();
 
-        let from_stack = &mut stacks[from_idx];
+        let from_stack = &mut stacks[crate_move.from];
         let mut items: Vec<_> = from_stack
-            .drain((from_stack.len() - move_count)..)
+            .drain((from_stack.len() - crate_move.count)..)
             .collect();
-        (&mut stacks[to_idx]).append(&mut items);
-
-        // (0..move_count).for_each(|_| {
-        //     let item = &mut stacks[from_idx].pop().unwrap();
-        //     (&mut stacks[to_idx]).push(*item);
-        // });
+        (&mut stacks[crate_move.to]).append(&mut items);
     });
 
     let result: String = stacks
