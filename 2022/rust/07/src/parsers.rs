@@ -1,6 +1,6 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{newline, u32};
+use nom::character::complete::{newline, space1, u32};
 use nom::multi::separated_list1;
 use nom::sequence::{separated_pair, terminated};
 use nom::IResult;
@@ -31,7 +31,7 @@ pub fn parse_directory(input: &str) -> IResult<&str, Path> {
 }
 
 pub fn parse_file(input: &str) -> IResult<&str, Path> {
-    let (rest, size) = terminated(u32, tag(" "))(input)?;
+    let (rest, size) = terminated(u32, space1)(input)?;
 
     Ok((input, Path::File { size, name: rest }))
 }
@@ -82,33 +82,33 @@ mod tests {
         const CMD: &str = "$ ls
 4060174 j
 7214296 k";
-        let expected_parsed = Command::Ls(vec!["4060174 j", "7214296 k"]);
+        let _expected_parsed = Command::Ls(vec!["4060174 j", "7214296 k"]);
 
         let (_, parsed) = parse_ls(CMD).unwrap();
 
-        assert!(matches!(parsed, expected_parsed));
+        assert!(matches!(parsed, _expected_parsed));
     }
 
     #[test]
     fn parse_directory_works() {
         const LINE: &str = "dir e";
-        let expected_parsed = Path::Dir("e");
+        let _expected_parsed = Path::Dir("e");
 
         let (_, parsed) = parse_directory(LINE).unwrap();
 
-        assert!(matches!(parsed, expected_parsed));
+        assert!(matches!(parsed, _expected_parsed));
     }
 
     #[test]
     fn parse_file_works() {
         const LINE: &str = "8033020 d.log";
-        let expected_parsed = Path::File {
+        let _expected_parsed = Path::File {
             name: "d.log",
             size: 8033020,
         };
 
         let (_, parsed) = parse_file(LINE).unwrap();
 
-        assert!(matches!(parsed, expected_parsed));
+        assert!(matches!(parsed, _expected_parsed));
     }
 }
