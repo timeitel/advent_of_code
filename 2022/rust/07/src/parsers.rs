@@ -1,8 +1,8 @@
 use nom::branch::alt;
-use nom::bytes::complete::tag;
-use nom::character::complete::{newline, space1, u32};
+use nom::bytes::complete::{tag, take_while};
+use nom::character::complete::{alpha0, newline, space1, u32};
 use nom::multi::separated_list1;
-use nom::sequence::{separated_pair, terminated};
+use nom::sequence::terminated;
 use nom::IResult;
 
 #[derive(Debug)]
@@ -15,54 +15,65 @@ pub enum Cd<'a> {
 #[derive(Debug)]
 pub enum Command<'a> {
     Cd(Cd<'a>),
-    Ls(Vec<&'a str>),
+    Ls(Vec<Path>),
 }
 
 #[derive(Debug)]
-pub enum Path<'a> {
-    File { size: u32, name: &'a str },
-    Dir(&'a str),
+pub enum Path {
+    File { size: u32, name: String },
+    Dir(String),
 }
 
-pub fn parse_directory(input: &str) -> IResult<&str, Path> {
+fn parse_directory(input: &str) -> IResult<&str, Path> {
     let (rest, _) = tag("dir ")(input)?;
+    let (rest, dir_name) = alpha0(rest)?;
 
-    Ok((input, Path::Dir(rest)))
+    Ok((rest, Path::Dir(String::from(dir_name))))
 }
 
-pub fn parse_file(input: &str) -> IResult<&str, Path> {
+fn parse_file(input: &str) -> IResult<&str, Path> {
     let (rest, size) = terminated(u32, space1)(input)?;
+    let (rest, name) = take_while(|x: char| x.is_alphabetic() || x == '.')(rest)?;
 
-    Ok((input, Path::File { size, name: rest }))
+    Ok((
+        rest,
+        Path::File {
+            size,
+            name: String::from(name),
+        },
+    ))
 }
 
-pub fn parse_cd(input: &str) -> IResult<&str, Command> {
+fn parse_cd(input: &str) -> IResult<&str, Command> {
     let (rest, _) = tag("$ cd ")(input)?;
+    let (rest, cmd) = alt((tag("/"), tag(".."), take_while(|x: char| x.is_alphabetic())))(rest)?;
 
-    let cmd = match rest {
+    let cmd = match cmd {
         "/" => Command::Cd(Cd::Root),
         ".." => Command::Cd(Cd::Up),
         name => Command::Cd(Cd::Down(name)),
     };
 
-    Ok((input, cmd))
+    Ok((rest, cmd))
 }
 
-pub fn parse_ls(input: &str) -> IResult<&str, Command> {
+fn parse_ls(input: &str) -> IResult<&str, Command> {
     let (rest, _) = tag("$ ls")(input)?;
     let (rest, _) = newline(rest)?;
-    // let (rest, files) = separated_list1(newline, alt((parse_file, parse_directory)))(rest)?;
+    let (rest, paths) = separated_list1(newline, alt((parse_file, parse_directory)))(rest)?;
 
-    Ok((rest, Command::Ls(vec![])))
+    Ok((rest, Command::Ls(paths)))
 }
 
-// pub fn parse_cmd(input: &str) -> IResult<&str, Command> {
-//     let (input, cmd) = separated_list1(newline, alt((parse_ls, parse_cd)))(input)?;
-//     Ok((input, Command::Ls(vec![])))
-// }
+pub fn parse_commands(input: &str) -> IResult<&str, Vec<Command>> {
+    let (input, commands) = separated_list1(newline, alt((parse_ls, parse_cd)))(input)?;
+    Ok((input, commands))
+}
 
 #[cfg(test)]
 mod tests {
+    use core::panic;
+
     use super::*;
 
     #[test]
@@ -80,35 +91,68 @@ mod tests {
     #[test]
     fn parse_ls_works() {
         const CMD: &str = "$ ls
-4060174 j
-7214296 k";
-        let _expected_parsed = Command::Ls(vec!["4060174 j", "7214296 k"]);
+dir e
+62596 h.lst";
 
         let (_, parsed) = parse_ls(CMD).unwrap();
 
-        assert!(matches!(parsed, _expected_parsed));
+        let paths = match parsed {
+            Command::Ls(paths) => paths,
+            _ => panic!("No paths"),
+        };
+
+        let dir_name = match &paths[0] {
+            Path::Dir(name) => name,
+            _ => panic!("No dir name"),
+        };
+
+        let (file_name, file_size) = match &paths[1] {
+            Path::File { name, size } => (name, size),
+            _ => panic!("No dir name"),
+        };
+
+        assert_eq!(file_name, "h.lst");
+        assert_eq!(*file_size, 62596);
+        assert_eq!(dir_name, "e");
     }
 
     #[test]
     fn parse_directory_works() {
         const LINE: &str = "dir e";
-        let _expected_parsed = Path::Dir("e");
-
         let (_, parsed) = parse_directory(LINE).unwrap();
+        let name = match parsed {
+            Path::Dir(name) => name,
+            _ => panic!("Invalid directory"),
+        };
 
-        assert!(matches!(parsed, _expected_parsed));
+        assert_eq!("e", name);
     }
 
     #[test]
     fn parse_file_works() {
         const LINE: &str = "8033020 d.log";
-        let _expected_parsed = Path::File {
-            name: "d.log",
-            size: 8033020,
-        };
 
         let (_, parsed) = parse_file(LINE).unwrap();
+        let name = match parsed {
+            Path::File { name, size: _ } => name,
+            _ => panic!("Invalid name"),
+        };
 
-        assert!(matches!(parsed, _expected_parsed));
+        assert_eq!("d.log", name)
+    }
+
+    #[test]
+    fn parse_commands_works() {
+        const INPUT: &str = "$ cd /
+$ ls
+dir a
+14848514 b.txt
+8504156 c.dat
+dir d
+7214296 k";
+
+        let (_, cmds) = parse_commands(INPUT).unwrap();
+
+        assert_eq!(cmds.len(), 2);
     }
 }

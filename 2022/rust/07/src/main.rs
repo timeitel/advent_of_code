@@ -1,10 +1,13 @@
+use parsers::parse_commands;
 use std::fs;
+
 mod parsers;
 
-use parsers::*;
-
 fn process(file: &str) -> usize {
-    let pwd: Vec<String> = vec![];
+    let (_, cmds) = parse_commands(file).unwrap();
+
+    let _pwd: Vec<&str> = vec![];
+    dbg!(cmds.len());
 
     0
 }
