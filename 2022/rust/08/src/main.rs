@@ -12,55 +12,65 @@ fn get_trees(file: &str) -> Vec<Vec<u32>> {
     trees
 }
 
-fn is_tree_visible(row: usize, column: usize, trees: &Vec<Vec<u32>>) -> bool {
-    let tree = trees[row][column];
+fn get_score_for_row(tree: u32, row: &[u32], reverse_iterate: bool) -> u32 {
+    let mut score: u32 = 0;
+    if reverse_iterate {
+        for i in (0..row.len()).rev() {
+            let next_tree = row[i];
+            if next_tree <= tree {
+                score += 1;
+            }
 
-    if row == 0 || row == trees.len() - 1 || column == 0 || column == trees[row].len() - 1 {
-        return true;
-    }
+            if next_tree >= tree {
+                break;
+            }
+        }
+    } else {
+        for i in 0..row.len() {
+            let next_tree = row[i];
+            score += 1;
 
-    let left_row = &trees[row][..column];
-    if left_row.iter().all(|x| *x < tree) {
-        return true;
-    }
-
-    let right_row = &trees[row][column + 1..];
-    if right_row.iter().all(|x| *x < tree) {
-        return true;
-    }
-
-    let mut upper_col: Vec<u32> = vec![];
-    for i in 0..row {
-        upper_col.push(trees[i][column])
-    }
-    if upper_col.iter().all(|x| *x < tree) {
-        return true;
-    }
-
-    let mut lower_col: Vec<u32> = vec![];
-    for i in row + 1..trees.len() {
-        lower_col.push(trees[i][column])
-    }
-    if lower_col.iter().all(|x| *x < tree) {
-        return true;
-    }
-
-    false
-}
-
-fn process(file: &str) -> u32 {
-    let trees = get_trees(file);
-    let mut visible_trees: u32 = 0;
-
-    for (row, row_trees) in trees.iter().enumerate() {
-        for (column, _) in row_trees.iter().enumerate() {
-            if is_tree_visible(row, column, &trees) {
-                visible_trees += 1;
+            if next_tree >= tree {
+                break;
             }
         }
     }
 
-    visible_trees
+    score
+}
+
+fn get_score(row: usize, column: usize, trees: &Vec<Vec<u32>>) -> u32 {
+    let tree = trees[row][column];
+    let left_row = &trees[row][..column];
+    let right_row = &trees[row][column + 1..];
+    let mut upper_col: Vec<u32> = vec![];
+    for i in 0..row {
+        upper_col.push(trees[i][column])
+    }
+    let mut lower_col: Vec<u32> = vec![];
+    for i in row + 1..trees.len() {
+        lower_col.push(trees[i][column])
+    }
+
+    let left_score = get_score_for_row(tree, left_row, true);
+    let right_score = get_score_for_row(tree, right_row, false);
+    let upper_score = get_score_for_row(tree, &upper_col, true);
+    let lower_score = get_score_for_row(tree, &lower_col, false);
+
+    left_score * right_score * upper_score * lower_score
+}
+
+fn process(file: &str) -> u32 {
+    let trees = get_trees(file);
+    let mut scores = vec![];
+
+    for (row, row_trees) in trees.iter().enumerate() {
+        for (column, _) in row_trees.iter().enumerate() {
+            scores.push(get_score(row, column, &trees));
+        }
+    }
+
+    scores.into_iter().max().unwrap()
 }
 
 fn main() {
@@ -78,5 +88,5 @@ fn passes() {
 35390";
 
     let size = process(INPUT);
-    assert_eq!(size, 21);
+    assert_eq!(size, 8);
 }
