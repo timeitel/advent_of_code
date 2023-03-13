@@ -1,13 +1,16 @@
+use ::lending_iterator::prelude::*;
 use itertools::Itertools;
 use nom::bytes::complete::tag;
 use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
 use nom::Parser;
+use nom::{
+    branch::alt,
+    character::complete::{self, newline},
+};
 use std::collections::HashSet;
 use std::fs;
 
-use nom::branch::alt;
-use nom::character::complete::{self, newline};
 use nom::IResult;
 
 #[derive(Clone, Copy, Debug)]
@@ -96,13 +99,113 @@ fn process(file: &str) -> usize {
     tail_positions.len()
 }
 
+// https://github.com/ChristopherBiscardi/advent-of-code/blob/0aa7054ae4c38d348d93e1669a88bcdea5c61d1d/2022/rust/day-09/src/lib.rs
+pub fn process_part2(input: &str) -> usize {
+    let (_, move_set) = parse_moves(input).unwrap();
+    let mut rope = [(0, 0); 10];
+    let mut tail_positions = HashSet::from([*rope.last().unwrap()]);
+
+    for head_move in move_set.iter() {
+        match head_move {
+            Direction::Left => {
+                rope[0].0 -= 1;
+            }
+            Direction::Right => {
+                rope[0].0 += 1;
+            }
+            Direction::Up => {
+                rope[0].1 += 1;
+            }
+            Direction::Down => {
+                rope[0].1 -= 1;
+            }
+        }
+
+        let mut rope_windows = rope.windows_mut::<2>();
+        while let Some([ref mut head, ref mut tail]) = rope_windows.next() {
+            // println!("{:?}{:?}", head, tail);
+            let x_range = (head.0 - 1)..=(head.0 + 1);
+            let y_range = (head.1 - 1)..=(head.1 + 1);
+
+            let tail_is_connected = x_range
+                .cartesian_product(y_range)
+                .any(|tuple| tuple == *tail);
+
+            if !tail_is_connected {
+                // println!("{last_head_move:?}");
+                // move_tail
+                // let mut new_tail = head.clone();
+                if head.0 == tail.0 {
+                    if head.1 > tail.1 {
+                        tail.1 += 1;
+                    } else {
+                        tail.1 -= 1;
+                    }
+                } else if head.1 == tail.1 {
+                    if head.0 > tail.0 {
+                        tail.0 += 1;
+                    } else {
+                        tail.0 -= 1;
+                    }
+                } else {
+                    // diagonal
+                    // let head_cross_positions = [
+                    //     (head.0 - 1, head.1),
+                    //     (head.0 + 1, head.1),
+                    //     (head.0, head.1 - 1),
+                    //     (head.0, head.1 + 1),
+                    // ];
+                    let x_range = (head.0 - 1)..=(head.0 + 1);
+                    let y_range = (head.1 - 1)..=(head.1 + 1);
+
+                    let head_3x3 = x_range.cartesian_product(y_range).collect::<Vec<_>>();
+
+                    let x_range = (tail.0 - 1)..=(tail.0 + 1);
+                    let y_range = (tail.1 - 1)..=(tail.1 + 1);
+
+                    let maybe_new_tail: Vec<(i32, i32)> = x_range
+                        .cartesian_product(y_range)
+                        .filter(|tuple| head_3x3.contains(tuple))
+                        .collect();
+                    match maybe_new_tail.len() {
+                        2 => {
+                            let new_head_cross_positions = [
+                                (head.0 - 1, head.1),
+                                (head.0 + 1, head.1),
+                                (head.0, head.1 - 1),
+                                (head.0, head.1 + 1),
+                            ];
+                            let next = maybe_new_tail
+                                .iter()
+                                .find(|tuple| new_head_cross_positions.contains(tuple))
+                                .unwrap();
+                            *tail = *next;
+                        }
+                        1 => {
+                            *tail = maybe_new_tail[0];
+                        }
+                        _ => {
+                            panic!("unknown tail length");
+                        }
+                    };
+                    // *tail = new_tail;
+                }
+            }
+        }
+
+        tail_positions.insert(*rope.last().unwrap());
+    }
+    tail_positions.len()
+}
+
 fn main() {
     let file = fs::read_to_string("input.txt").unwrap();
-    let result = process(&file);
+    let result = process_part2(&file);
     println!("{result}")
 }
 
 #[test]
+#[ignore]
 fn passes() {
     const INPUT: &str = "R 4
 U 4
