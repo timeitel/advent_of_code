@@ -26,14 +26,14 @@ impl Instruction {
 fn parse_noop(input: &str) -> IResult<&str, Instruction> {
     let (input, _) = tag("noop")(input)?;
 
-    Ok((input, Instruction::NoOp))
+    Ok((input, NoOp))
 }
 
 fn parse_addx(input: &str) -> IResult<&str, Instruction> {
     let (input, _) = tag("addx ")(input)?;
     let (input, x) = complete::i32(input)?;
 
-    Ok((input, Instruction::Add(x)))
+    Ok((input, Add(x)))
 }
 
 fn parse_instructions(input: &str) -> IResult<&str, Vec<Instruction>> {
