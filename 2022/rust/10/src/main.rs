@@ -3,12 +3,24 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{self, newline};
 use nom::multi::separated_list1;
 use nom::IResult;
+use std::collections::HashMap;
 use std::fs;
 
 #[derive(Debug)]
 enum Instruction {
     Add(i32),
     NoOp,
+}
+
+use Instruction::*;
+
+impl Instruction {
+    fn cycles(&self) -> u32 {
+        match self {
+            NoOp => 1,
+            Add(_) => 2,
+        }
+    }
 }
 
 fn parse_noop(input: &str) -> IResult<&str, Instruction> {
@@ -29,11 +41,35 @@ fn parse_instructions(input: &str) -> IResult<&str, Vec<Instruction>> {
     Ok((input, parsed))
 }
 
-fn process(input: &str) -> usize {
+fn process(input: &str) -> i32 {
     let (_, instructions) = parse_instructions(input).unwrap();
-    dbg!(instructions);
+    let mut x: i32 = 1;
+    let mut cycles: u32 = 0;
+    let watched_cycles = [20, 60, 100, 140, 180, 220];
+    let mut cycle_scores: HashMap<u32, i32> = HashMap::new();
 
-    0
+    for instruction in instructions.iter() {
+        if watched_cycles.contains(&(cycles + 1)) {
+            cycle_scores.insert(cycles + 1, (cycles as i32 + 1) * x);
+        }
+
+        if watched_cycles.contains(&(cycles + 2)) {
+            cycle_scores.insert(cycles + 2, (cycles as i32 + 2) * x);
+        }
+
+        cycles += instruction.cycles();
+
+        match instruction {
+            NoOp => {}
+            Add(num) => x += num,
+        }
+    }
+
+    cycle_scores
+        .iter()
+        .map(|(_, value)| value)
+        .sum::<i32>()
+        .to_owned()
 }
 
 fn main() {
