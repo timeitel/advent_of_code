@@ -68,14 +68,47 @@ fn process(input: &str) -> i32 {
     cycle_scores.values().sum::<i32>()
 }
 
+pub fn process_part2(input: &str) -> String {
+    let (_, instructions) = parse_instructions(input).unwrap();
+    let mut x: i32 = 1;
+    let mut cycles: u32 = 0;
+    let mut crt_pixels: String = "".to_string();
+
+    for instruction in instructions.iter() {
+        for cycle_add in 0..instruction.cycles() {
+            let pixel_id = (cycles as i32 + cycle_add as i32) % 40;
+
+            if ((x - 1)..=(x + 1)).contains(&pixel_id) {
+                crt_pixels.push_str("#");
+            } else {
+                crt_pixels.push_str(".");
+            }
+        }
+
+        cycles += instruction.cycles();
+        if let Add(num) = instruction {
+            x += num;
+        };
+    }
+
+    crt_pixels
+        .chars()
+        .collect::<Vec<_>>()
+        .chunks(40)
+        .into_iter()
+        .map(|x| x.iter().cloned().collect())
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
 fn main() {
     let file = fs::read_to_string("input.txt").unwrap();
-    let result = process(&file);
+    let result = process_part2(&file);
     println!("{result}")
 }
 
 #[test]
-fn passes() {
+fn test1_passes() {
     const INPUT: &str = "addx 15
 addx -11
 addx 6
