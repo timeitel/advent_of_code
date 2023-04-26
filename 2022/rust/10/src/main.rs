@@ -65,11 +65,7 @@ fn process(input: &str) -> i32 {
         }
     }
 
-    cycle_scores
-        .iter()
-        .map(|(_, value)| value)
-        .sum::<i32>()
-        .to_owned()
+    cycle_scores.values().sum::<i32>()
 }
 
 fn main() {
