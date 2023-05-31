@@ -49,7 +49,7 @@ Monkey 3:
     If true: throw to monkey 0
     If false: throw to monkey 1";
 
-    assert_eq!(process(INPUT), 4);
+    assert_eq!(process(INPUT), 10605);
 }
 
 #[test]
