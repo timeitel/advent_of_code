@@ -7,7 +7,18 @@ pub fn get_monkey_business(mut monkeys: Vec<Monkey>) -> u64 {
 }
 
 pub fn compute_rounds(mut monkeys: Vec<Monkey>) -> Vec<Monkey> {
-    for _ in 0..20 {
+    let lcm = monkeys
+        .iter()
+        .map(|monkey| {
+            if let Op::Divide(n) = &monkey.test.operation {
+                n.get_value(0)
+            } else {
+                0
+            }
+        })
+        .product::<u64>();
+
+    for _ in 0..10000 {
         for i in 0..monkeys.len() {
             for _ in 0..monkeys[i].items.len() {
                 let monkey = &mut monkeys[i];
@@ -21,7 +32,7 @@ pub fn compute_rounds(mut monkeys: Vec<Monkey>) -> Vec<Monkey> {
                 };
 
                 let mut pass_to_monkey: Option<usize> = None;
-                let new = (new as f64 / 3.).floor() as u64;
+                let new = new % lcm;
                 if let Op::Divide(OpValue::Int(n)) = monkey.test.operation {
                     if new % n == 0 {
                         pass_to_monkey = Some(monkey.test.if_true as usize);
