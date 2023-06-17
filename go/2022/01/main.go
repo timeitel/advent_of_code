@@ -7,34 +7,36 @@ import (
   "strings"
 )
 
-func process(str string) (int) {
+func process(str string) (ex_01, ex_02 int) {
   content := string(str)
   paragraphs := strings.Split(content, "\n\n")
 
   numbers := make([]int, len(paragraphs))
-  for _, paragraph := range paragraphs {
+  for i, paragraph := range paragraphs {
     lines := strings.Split(paragraph, "\n")
-    for i, line := range lines {
+    elfTotal := 0
+    for _, line := range lines {
       num, _ := strconv.ParseInt(line, 10, 32)
-      numbers[i] = int(num)
+      elfTotal += int(num)
     }
+    numbers[i] = elfTotal
   }
 
   sort.Slice(numbers, func(i, j int) bool {
     return numbers[i] > numbers[j]
   })
 
-  result := 0
+  ex_02_result := 0
   for i := 0; i < 3; i++ {
-    result += numbers[i]
+    ex_02_result += numbers[i]
   }
 
-  return result
+  return numbers[0], ex_02_result
 }
 
 func main() {
   raw, _ := ioutil.ReadFile("input.txt")
   content := string(raw)
-  result := process(content)
-  println(result)
+  ex1, ex2 := process(content)
+  println(ex1, ex2)
 }

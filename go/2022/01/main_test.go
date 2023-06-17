@@ -19,8 +19,8 @@ func TestMain(t *testing.T) {
 10000`
 
   answer := 24000
-  result := process(testStr)
-  if result != answer {
-    t.Errorf("wow not good, expected %d and got %d", answer, result)
+  ex1, _ := process(testStr)
+  if ex1 != answer {
+    t.Errorf("wow not good, expected %d and got %d", answer, ex1)
   }
 }
