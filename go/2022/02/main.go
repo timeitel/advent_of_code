@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func process(str string) (ex_01, ex_02 int) {
+func process(str string) int {
 	lines := strings.Split(str, "\n")
 
 	totalScore := 0
@@ -18,16 +18,16 @@ func process(str string) (ex_01, ex_02 int) {
 		}
 
 		theirs := utils.ParseMove([]rune(moves[0])[0])
-		ours := utils.ParseMove([]rune(moves[1])[0])
+		ours := utils.GetRequiredMove(theirs, []rune(moves[1])[0])
 		totalScore += utils.GetRoundScore(theirs, ours)
 	}
 
-	return totalScore, 1
+	return totalScore
 }
 
 func main() {
 	raw, _ := ioutil.ReadFile("input.txt")
 	content := string(raw)
-	ex1, _ := process(content)
-	fmt.Println(ex1)
+	result := process(content)
+	fmt.Println(result)
 }

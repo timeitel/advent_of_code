@@ -18,13 +18,51 @@ const (
 	Lose        = 0
 )
 
+func GetRequiredMove(theirMove Move, requiredOutcome rune) Move {
+	switch theirMove {
+	case Rock:
+		switch requiredOutcome {
+		case 'X':
+			return Scissors
+		case 'Y':
+			return Rock
+		case 'Z':
+			return Paper
+		}
+
+	case Paper:
+		switch requiredOutcome {
+		case 'X':
+			return Rock
+		case 'Y':
+			return Paper
+		case 'Z':
+			return Scissors
+		}
+
+	case Scissors:
+		switch requiredOutcome {
+		case 'X':
+			return Paper
+		case 'Y':
+			return Scissors
+		case 'Z':
+			return Rock
+		}
+
+		return Paper
+	}
+
+	panic("Missed outcome")
+}
+
 func ParseMove(r rune) Move {
 	switch r {
-	case 'A', 'X':
+	case 'A':
 		return Rock
-	case 'B', 'Y':
+	case 'B':
 		return Paper
-	case 'C', 'Z':
+	case 'C':
 		return Scissors
 	default:
 		fmt.Println(r)
