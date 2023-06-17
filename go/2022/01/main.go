@@ -1,16 +1,14 @@
 package main
 
 import (
-  "fmt"
   "io/ioutil"
   "sort"
   "strconv"
   "strings"
 )
 
-func main() {
-  raw, _ := ioutil.ReadFile("input.txt")
-  content := string(raw)
+func process(str string) (int) {
+  content := string(str)
   paragraphs := strings.Split(content, "\n\n")
 
   numbers := make([]int, len(paragraphs))
@@ -31,5 +29,12 @@ func main() {
     result += numbers[i]
   }
 
-  fmt.Println(result)
+  return result
+}
+
+func main() {
+  raw, _ := ioutil.ReadFile("input.txt")
+  content := string(raw)
+  result := process(content)
+  println(result)
 }
