@@ -1,14 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 )
 
-func process(str string) (ex_01, ex_02 int) {
+func process(str string) int {
+
+	return 0
 }
 
 func main() {
 	raw, _ := ioutil.ReadFile("input.txt")
 	content := string(raw)
-	ex1, ex2 := process(content)
+	result := process(content)
+	fmt.Println(result)
 }
