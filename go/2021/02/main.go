@@ -28,15 +28,17 @@ func process(data []string) int {
 
 	h := 0
 	d := 0
+	aim := 0
 
 	for _, instruction := range ins {
 		switch instruction.dir {
 		case "forward":
 			h += instruction.val
+			d += (instruction.val * aim)
 		case "up":
-			d -= instruction.val
+			aim -= instruction.val
 		case "down":
-			d += instruction.val
+			aim += instruction.val
 		default:
 			log.Fatal(instruction)
 		}
