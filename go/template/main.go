@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 )
 
 func main() {
@@ -15,11 +14,11 @@ func main() {
 	fmt.Println(result)
 }
 
-func process(data []int) int {
+func process(data []string) int {
 	return 0
 }
 
-func read_file() []int {
+func read_file() []string {
 	file, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -28,16 +27,10 @@ func read_file() []int {
 	fileScanner := bufio.NewScanner(file)
 	fileScanner.Split(bufio.ScanLines)
 
-	var fileLines []int
+	var fileLines []string
 
 	for fileScanner.Scan() {
-		text := fileScanner.Text()
-		number, err := strconv.Atoi(text)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fileLines = append(fileLines, number)
+		fileLines = append(fileLines, fileScanner.Text())
 	}
 
 	file.Close()
