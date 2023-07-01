@@ -16,14 +16,15 @@ func main() {
 }
 
 func process(data []int) int {
-	depth := data[0]
+	depth := data[0] + data[1] + data[2]
 	count := 0
 
-	for i := 1; i < len(data); i++ {
-		if data[i] > depth {
+	for i := 1; i < len(data)-2; i++ {
+		newDepth := data[i] + data[i+1] + data[i+2]
+		if newDepth > depth {
 			count++
 		}
-		depth = data[i]
+		depth = newDepth
 	}
 
 	return count
