@@ -5,21 +5,31 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 )
 
 func main() {
 	content := read_file()
 
-	result := process(content)
-	fmt.Println(result)
+	process(content)
 }
 
-func process(data []int) int {
-	return 0
+func process(data []string) {
+	var bits = make([]int, len(data[0]))
+	for _, n := range data {
+		for i := range n {
+			if n[i] == '1' {
+				bits[i]++
+			}
+		}
+	}
+
+	g := 0b010100010100
+	e := 0b101011101011
+
+	fmt.Println(g * e)
 }
 
-func read_file() []int {
+func read_file() []string {
 	file, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -28,16 +38,14 @@ func read_file() []int {
 	fileScanner := bufio.NewScanner(file)
 	fileScanner.Split(bufio.ScanLines)
 
-	var fileLines []int
+	var fileLines []string
 
 	for fileScanner.Scan() {
-		text := fileScanner.Text()
-		number, err := strconv.Atoi(text)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		fileLines = append(fileLines, number)
+		fileLines = append(fileLines, fileScanner.Text())
 	}
 
 	file.Close()
