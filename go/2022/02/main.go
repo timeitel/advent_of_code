@@ -30,4 +30,5 @@ func main() {
 	content := string(raw)
 	result := process(content)
 	fmt.Println(result)
+	fmt.Println("what: ")
 }

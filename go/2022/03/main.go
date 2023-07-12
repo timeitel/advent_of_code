@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 )
 
 func process(str string) int {
@@ -14,8 +13,6 @@ func process(str string) int {
 func main() {
 	raw, _ := ioutil.ReadFile("input.txt")
 	content := string(raw)
-
-	content, _ = os.Open("input.txt")
 
 	result := process(content)
 	fmt.Println(result)

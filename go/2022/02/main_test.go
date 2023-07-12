@@ -5,11 +5,10 @@ import (
 )
 
 func TestMain(t *testing.T) {
-	testStr := ``
+	testStr := 24000
 
-	answer := 24000
-	ex1, _ := process(testStr)
-	if ex1 != answer {
-		t.Errorf("wow not good, expected %d and got %d", answer, ex1)
+	answer := 24020
+	if testStr != answer {
+		t.Errorf("wow not good, expected %d and got %d", answer, testStr)
 	}
 }
