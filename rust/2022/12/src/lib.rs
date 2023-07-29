@@ -10,8 +10,8 @@ enum NodeType {
 impl NodeType {
     fn height(self) -> u8 {
         match self {
-            NodeType::Start => 0,
-            NodeType::End => 25,
+            NodeType::Start => 25,
+            NodeType::End => 0,
             NodeType::Intermediate(h) => h,
         }
     }
@@ -34,9 +34,10 @@ impl NodeType {
 impl From<char> for NodeType {
     fn from(ch: char) -> NodeType {
         match ch {
-            'S' => NodeType::Start,
-            'E' => NodeType::End,
-            'a'..='z' => NodeType::Intermediate(ch as u8 - b'a'),
+            'E' => NodeType::Start,
+            'S' => NodeType::End,
+            'a' => NodeType::End,
+            'b'..='z' => NodeType::Intermediate(ch as u8 - b'a'),
             _ => panic!("invalid character: {ch}"),
         }
     }
@@ -110,11 +111,15 @@ impl Graph {
                 }
 
                 visited.insert(node.coordinate);
-                next_round.extend(self.edges(&node));
+                let edges = self.edges(&node);
 
-                if node.node_type.is_finishing() {
-                    return Some(count);
+                for e in &edges {
+                    if e.node_type.is_finishing() {
+                        return Some(count + 1);
+                    }
                 }
+
+                next_round.extend(edges);
             }
 
             current_nodes.extend(next_round);
@@ -154,7 +159,7 @@ impl Graph {
 
                 let next_node = self.node(coordinate).unwrap().clone();
 
-                if next_node.node_type.height() > current_height + 1 {
+                if next_node.node_type.height() < current_height - 1 {
                     return None;
                 }
 
@@ -186,14 +191,14 @@ abdefghi";
     #[test]
     fn edges() {
         let graph = Graph::new(INPUT);
-        let node = graph.node((0, 0)).unwrap();
-        assert_eq!(graph.edges(node).len(), 2);
+        let node = graph.node((5, 2)).unwrap();
+        assert_eq!(graph.edges(node).len(), 1);
     }
 
     #[test]
     fn bfs() {
         let graph = Graph::new(INPUT);
         let node = graph.bfs().unwrap();
-        assert_eq!(node, 31);
+        assert_eq!(node, 29);
     }
 }
