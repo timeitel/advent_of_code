@@ -2,21 +2,26 @@ use serde::Deserialize;
 use std::cmp::Ordering;
 
 fn main() {
-    let mut sum = 0;
-    for (i, groups) in include_str!("input.txt").split("\n\n").enumerate() {
-        let i = i + 1;
+    let dividers = vec![
+        Packet::List(vec![Packet::Number(2)]),
+        Packet::List(vec![Packet::Number(6)]),
+    ];
 
-        let mut packets = groups
-            .lines()
-            .map(|line| serde_json::from_str::<Packet>(line).unwrap());
-        let l = packets.next().unwrap();
-        let r = packets.next().unwrap();
+    let mut packets = include_str!("input.txt")
+        .lines()
+        .filter(|s| !s.is_empty())
+        .map(|line| serde_json::from_str::<Packet>(line).unwrap())
+        .chain(dividers.iter().cloned())
+        .collect::<Vec<_>>();
 
-        if l < r {
-            sum += i;
-        }
-    }
-    dbg!(sum);
+    packets.sort();
+
+    let decoder_key = dividers
+        .iter()
+        .map(|d| packets.binary_search(d).unwrap() + 1)
+        .product::<usize>();
+
+    dbg!(decoder_key);
 }
 
 #[derive(Deserialize, Clone, PartialEq, Eq)]
