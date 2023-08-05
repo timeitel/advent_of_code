@@ -11,7 +11,7 @@ use nom::{
 };
 
 fn main() {
-    let part_one = process_part1(include_str!("main.txt"));
+    let part_one = process_part1(include_str!("main.txt"), 2_000_000);
     println!("{part_one}");
 }
 
@@ -54,7 +54,7 @@ fn tree_map(input: &str) -> IResult<&str, BTreeMap<Sensor, Beacon>> {
     ))
 }
 
-fn process_part1(input: &str) -> String {
+fn process_part1(input: &str, line_number: i32) -> String {
     let (_, tree_map) = tree_map(input).unwrap();
     let distances: BTreeMap<&Sensor, i32> = tree_map
         .iter()
@@ -66,7 +66,6 @@ fn process_part1(input: &str) -> String {
         })
         .collect();
 
-    let line_number = 2_000_000;
     distances
         .iter()
         .filter(|(sensor, distance)| {
@@ -115,7 +114,7 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3";
 
     #[test]
     fn part_1_works() {
-        debug_assert_eq!(process_part1(INPUT), "26");
+        debug_assert_eq!(process_part1(INPUT, 10), "26");
     }
 
     #[test]
