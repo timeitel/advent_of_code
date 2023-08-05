@@ -1,91 +1,50 @@
-use std::collections::BTreeMap;
+mod parse;
 
 use itertools::Itertools;
-use nom::{
-    bytes::complete::tag,
-    character::complete,
-    character::complete::line_ending,
-    multi::separated_list1,
-    sequence::{preceded, separated_pair},
-    IResult, Parser,
-};
+use parse::{Point, Record};
+
+struct Map {
+    records: Vec<Record>,
+}
+
+impl Map {
+    fn parse(input: &str) -> Self {
+        let records = input.lines().map(Record::must_parse).collect();
+        Self { records }
+    }
+
+    fn num_impossible_positions(&self, y: i64) -> usize {
+        let mut total = 0;
+        let min_x = -4;
+        let max_x = 26;
+
+        for x in min_x..=max_x {
+            let point = Point { x, y };
+            if self.records.iter().any(|rec| rec.beacon == point) {
+            } else if self.records.iter().any(|rec| {
+                let radius = rec.sensor.manhattan_dist(rec.beacon);
+                rec.sensor.manhattan_dist(point) <= radius
+            }) {
+                total += 1
+            }
+        }
+
+        total
+    }
+}
 
 fn main() {
-    let part_one = process_part1(include_str!("main.txt"), 2_000_000);
+    let input = include_str!("main.txt");
+    let part_one = process_part1(input, 10);
+    // let part_two = process_part2(include_str!("main.txt"), 10_000_000);
     println!("{part_one}");
+    // println!("{part_two}");
 }
 
-#[derive(Ord, PartialOrd, Eq, PartialEq)]
-struct Beacon {
-    x: i32,
-    y: i32,
-}
-
-#[derive(Ord, PartialOrd, Eq, PartialEq)]
-struct Sensor {
-    x: i32,
-    y: i32,
-}
-
-fn position(input: &str) -> IResult<&str, (i32, i32)> {
-    separated_pair(
-        preceded(tag("x="), complete::i32),
-        tag(", "),
-        preceded(tag("y="), complete::i32),
-    )(input)
-}
-
-fn tree_map(input: &str) -> IResult<&str, BTreeMap<Sensor, Beacon>> {
-    let (input, list) = separated_list1(
-        line_ending,
-        preceded(
-            tag("Sensor at "),
-            separated_pair(
-                position.map(|(x, y)| Sensor { x, y }),
-                tag(": closest beacon is at "),
-                position.map(|(x, y)| Beacon { x, y }),
-            ),
-        ),
-    )(input)?;
-
-    Ok((
-        input,
-        list.into_iter().collect::<BTreeMap<Sensor, Beacon>>(),
-    ))
-}
-
-fn process_part1(input: &str, line_number: i32) -> String {
-    let (_, tree_map) = tree_map(input).unwrap();
-    let distances: BTreeMap<&Sensor, i32> = tree_map
-        .iter()
-        .map(|(sensor, beacon)| {
-            (
-                sensor,
-                (beacon.x - sensor.x).abs() + (beacon.y - sensor.y).abs(),
-            )
-        })
-        .collect();
-
-    distances
-        .iter()
-        .filter(|(sensor, distance)| {
-            let sensor_range = (sensor.y - **distance)..(sensor.y + **distance);
-            sensor_range.contains(&line_number)
-        })
-        .flat_map(|(sensor, max_distance)| {
-            let distance_to_line = sensor.y - line_number;
-            let max_distance_on_line = max_distance - distance_to_line.abs();
-            (sensor.x - max_distance_on_line)..=sensor.x + max_distance_on_line
-        })
-        .unique()
-        .filter(|x| {
-            !tree_map.values().contains(&Beacon {
-                x: *x,
-                y: line_number,
-            })
-        })
-        .count()
-        .to_string()
+fn process_part1(input: &str, line_number: i64) -> String {
+    let map = Map::parse(input);
+    let positions = map.num_impossible_positions(line_number);
+    positions.to_string()
 }
 
 // TODO
