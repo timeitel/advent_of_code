@@ -1,5 +1,7 @@
 mod parse;
 
+use std::ops::RangeInclusive;
+
 use itertools::Itertools;
 use parse::{Point, Record};
 
@@ -13,49 +15,77 @@ impl Map {
         Self { records }
     }
 
-    fn num_impossible_positions(&self, y: i64) -> usize {
-        let mut total = 0;
-        let min_x = -4;
-        let max_x = 26;
-
-        for x in min_x..=max_x {
-            let point = Point { x, y };
-            if self.records.iter().any(|rec| rec.beacon == point) {
-            } else if self.records.iter().any(|rec| {
-                let radius = rec.sensor.manhattan_dist(rec.beacon);
-                rec.sensor.manhattan_dist(point) <= radius
-            }) {
-                total += 1
+    fn ranges(&self, y: i64) -> impl Iterator<Item = RangeInclusive<i64>> {
+        let mut ranges = vec![];
+        for rec in &self.records {
+            let radius = rec.sensor.manhattan_dist(rec.beacon);
+            let y_dist = (y - rec.sensor.y).abs();
+            if y_dist > radius {
+                continue;
             }
+            let d = radius - y_dist;
+            let middle = rec.sensor.x;
+            let start = middle - d;
+            let end = middle + d;
+            let range = start..=end;
+            ranges.push(range);
         }
+        ranges.sort_by_key(|r| *r.start());
 
-        total
+        ranges.into_iter().coalesce(|a, b| {
+            if b.start() - 1 <= *a.end() {
+                if b.end() > a.end() {
+                    Ok(*a.start()..=*b.end())
+                } else {
+                    Ok(a)
+                }
+            } else {
+                Err((a, b))
+            }
+        })
+    }
+
+    fn ranges_clamped(
+        &self,
+        y: i64,
+        x_range: RangeInclusive<i64>,
+    ) -> impl Iterator<Item = RangeInclusive<i64>> {
+        self.ranges(y).filter_map(move |r| {
+            let r = *r.start().max(x_range.start())..=*r.end().min(x_range.end());
+            if r.start() > r.end() {
+                None
+            } else {
+                Some(r)
+            }
+        })
+    }
+
+    fn beacon_position(
+        &self,
+        y_range: &RangeInclusive<i64>,
+        x_range: &RangeInclusive<i64>,
+    ) -> Option<Point> {
+        y_range.clone().find_map(|y| {
+            self.ranges_clamped(y, x_range.clone())
+                .nth(1)
+                .map(|r| Point {
+                    x: r.start() - 1,
+                    y,
+                })
+        })
     }
 }
 
 fn main() {
-    let input = include_str!("main.txt");
-    let part_one = process_part1(input, 10);
-    // let part_two = process_part2(include_str!("main.txt"), 10_000_000);
-    println!("{part_one}");
-    // println!("{part_two}");
-}
-
-fn process_part1(input: &str, line_number: i64) -> String {
-    let map = Map::parse(input);
-    let positions = map.num_impossible_positions(line_number);
-    positions.to_string()
-}
-
-// TODO
-fn process_part2(input: &str) -> String {
-    "asd".to_string()
+    for (input, range) in [(include_str!("main.txt"), 0..=4_000_000)] {
+        let map = Map::parse(input);
+        let bp = map.beacon_position(&range, &range).unwrap();
+        println!("tuning frequency: {}", bp.x * 4_000_000 + bp.y);
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     const INPUT: &str = "Sensor at x=2, y=18: closest beacon is at x=-2, y=15
 Sensor at x=9, y=16: closest beacon is at x=10, y=16
 Sensor at x=13, y=2: closest beacon is at x=15, y=3
@@ -72,13 +102,6 @@ Sensor at x=14, y=3: closest beacon is at x=15, y=3
 Sensor at x=20, y=1: closest beacon is at x=15, y=3";
 
     #[test]
-    fn part_1_works() {
-        debug_assert_eq!(process_part1(INPUT, 10), "26");
-    }
-
-    #[test]
     #[ignore]
-    fn part_2_works() {
-        debug_assert_eq!(process_part2(INPUT), "26");
-    }
+    fn part_2_works() {}
 }
